@@ -5,13 +5,15 @@ from sklearn.pipeline import Pipeline
 import pandas as pd
 import numpy as np
 import pickle # TODO: Pickle final model
-import ast
-import re
 
 TARGET = 'is_legendary'
 
 def preprocess_data(path: str) -> pd.DataFrame:
     """
+    Drops irrelevant data.
+    Converts capture_rate to numerical data.
+    One Hot Encodes categorical data.
+    
     ### Params
         path: Path to data set
     
@@ -21,26 +23,23 @@ def preprocess_data(path: str) -> pd.DataFrame:
     data = pd.read_csv(path)
     data = data.drop(columns=['classfication', 'japanese_name', 'name', 'generation'])
     
-    # NOTE: Some abilities are duplicated
-    # NOTE: Single abilities are not surrounded in "" while multiple ones are
+    # Make capture_rate a numeric data type column
+    data['capture_rate'] = data['capture_rate'].str.extract('(\d+)').astype(np.int64)
     
-    # TODO: Change capture_rate to numerical (change 30 (Meteorite)255 (Core) to larger number)
-    # Make it generalizable
-    
-    categorical_columns = data.select_dtypes(include=['object']).columns.drop(labels=['abilities'])
-    numeric_columns = data.select_dtypes(include=['float64', 'int64']).columns
     ability_column = 'abilities'
+    categorical_columns = \
+        data.select_dtypes(include=['object']).columns.drop(labels=[ability_column])
+    numeric_columns = data.select_dtypes(include=['float64', 'int64']).columns
     
     data[categorical_columns] = data[categorical_columns].fillna('Missing')
     data[ability_column] = data[ability_column].fillna('[]')
     data[numeric_columns] = data[numeric_columns].fillna(0)
     
-    # TODO: Create separate column for each ability (manually)
-   
     # Encode categorical columns
     encoder = OneHotEncoder(sparse_output=False, drop='first')
     encoded_columns = encoder.fit_transform(data[categorical_columns])
-    encoded_df = pd.DataFrame(encoded_columns, columns=encoder.get_feature_names_out(categorical_columns))
+    encoded_df = pd.DataFrame(  encoded_columns
+                              , columns=encoder.get_feature_names_out(categorical_columns))
 
     # Drop the original categorical data and add the encoded data
     data = data.drop(categorical_columns, axis=1)
@@ -49,7 +48,18 @@ def preprocess_data(path: str) -> pd.DataFrame:
     # Get the correct feature names from the encoder
     categorical_columns = encoder.get_feature_names_out(categorical_columns)
     
-    print(data)
+    # Convert stringified lists to actual lists
+    data['abilities'] = data['abilities'].apply(lambda x: eval(x))
+
+    # Convert abilities to multiple one-hot-encoded columns
+    mlb = MultiLabelBinarizer()
+    abilities_data = pd.DataFrame(  mlb.fit_transform(data['abilities'])
+                                  , columns=mlb.classes_
+                                  , index=data.index)
+    
+    # Drop abilities column and add encoded data
+    data = data.drop(ability_column, axis=1)
+    data = pd.concat([data, abilities_data], axis=1)
 
     return data
 
