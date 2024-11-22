@@ -1,5 +1,8 @@
-from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import OneHotEncoder, MultiLabelBinarizer
+from sklearn.base import TransformerMixin, BaseEstimator
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 
 import pandas as pd
@@ -7,6 +10,27 @@ import numpy as np
 import pickle # TODO: Pickle final model
 
 TARGET = 'is_legendary'
+
+class SelectColumns(BaseEstimator, TransformerMixin):
+    def __init__(self, columns):
+        self.columns = columns
+
+    def fit(self, xs, ys, **params):
+        return self
+    
+    def transform(self, xs):
+        return xs[self.columns]
+
+class TransformData(BaseEstimator, TransformerMixin):
+    def __init__(self, func):
+        self.func = func
+
+    def fit(self, xs, ys, **params):
+        return self
+    
+    def transform(self, xs):
+        result = xs.apply(self.func)
+        return result
 
 def preprocess_data(path: str) -> pd.DataFrame:
     """
@@ -37,8 +61,7 @@ def preprocess_data(path: str) -> pd.DataFrame:
     
     # Encode categorical columns
     encoder = OneHotEncoder(sparse_output=False, drop='first')
-    encoded_columns = encoder.fit_transform(data[categorical_columns])
-    encoded_df = pd.DataFrame(  encoded_columns
+    encoded_df = pd.DataFrame(  encoder.fit_transform(data[categorical_columns])
                               , columns=encoder.get_feature_names_out(categorical_columns))
 
     # Drop the original categorical data and add the encoded data
@@ -63,16 +86,69 @@ def preprocess_data(path: str) -> pd.DataFrame:
 
     return data
 
-def create_pipe(data: pd.DataFrame) -> Pipeline:
-    return None
+def create_pipe() -> Pipeline:
+    """
+    Create Pipeline with the following steps:
+        column_select
+        PCA
+        transform_data
+        regression
+    
+    ### Returns
+        Pipline
+    """
+    steps = [
+        ('column_select', SelectColumns(['capture_rate']))
+        , ('PCA', PCA(n_components=2))
+        , ('transform_data', TransformData(lambda x: x))
+        , ('regression', GradientBoostingClassifier(max_depth=2))
+    ]
+    return Pipeline(steps)
+
+def create_grid_search(data: pd.DataFrame, pipe: Pipeline) -> GridSearchCV:
+    """
+    Create GridSearchCV.
+
+    ### Params
+        data: DataFrame containing X and Y features
+        pipe: Pipeline
+    
+    ### Returns
+        GridSearchCV
+    """
+    grid = {
+        'column_select__columns': [
+            list(data.drop(columns=TARGET).columns)
+        ],
+        'PCA__n_components': [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+        ],
+        'transform_data__func': [
+            lambda x: np.where(x > 0, np.sqrt(x), 0)
+            , lambda x: x
+            , np.square
+        ],
+        'regression__max_depth': [
+            2,3,4,5,6,7,8,9
+        ],
+        'regression__learning_rate': [
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        ]
+    }
+    return GridSearchCV(pipe, grid, scoring='f1', n_jobs=-1, cv=5)
 
 def train_model(data: pd.DataFrame, pipe: Pipeline):
+    return None
+
+def save_model(model):
     pass
 
 def main():
     data = preprocess_data('../pokemon/updated_data.csv')
-    pipe = create_pipe(data)
-    train_model(data, pipe)
+    pipe = create_pipe()
+    search = create_grid_search(data, pipe)
+    model = train_model(data, search)
+    save_model(model)
 
 if __name__ == '__main__':
     main()
