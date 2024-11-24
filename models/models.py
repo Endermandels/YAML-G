@@ -99,7 +99,7 @@ def create_pipe() -> Pipeline:
     """
     steps = [
         ('column_select', SelectColumns(['capture_rate']))
-        , ('PCA', PCA(n_components=2))
+        # , ('PCA', PCA(n_components=2))
         , ('transform_data', TransformData(lambda x: x))
         , ('regression', GradientBoostingClassifier(max_depth=2))
     ]
@@ -120,9 +120,9 @@ def create_grid_search(data: pd.DataFrame, pipe: Pipeline) -> GridSearchCV:
         'column_select__columns': [
             list(data.drop(columns=TARGET).columns)
         ],
-        'PCA__n_components': [
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-        ],
+        # 'PCA__n_components': [
+        #     1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+        # ],
         'transform_data__func': [
             lambda x: np.where(x > 0, np.sqrt(x), 0)
             , lambda x: x
@@ -137,18 +137,43 @@ def create_grid_search(data: pd.DataFrame, pipe: Pipeline) -> GridSearchCV:
     }
     return GridSearchCV(pipe, grid, scoring='f1', n_jobs=-1, cv=5)
 
-def train_model(data: pd.DataFrame, pipe: Pipeline):
-    return None
+def train_model(data: pd.DataFrame, search: GridSearchCV):
+    """
+    Train model in GridSearchCV.
+    
+    ### Params
+        data:   DataFrame containing X and Y features
+        search: GridSearchCV
+    
+    ### Returns
+        Model with best hyperparameters
+    """
+    xs = data.drop(columns=[TARGET])
+    ys = data[TARGET]
 
-def save_model(model):
-    pass
+    search.fit(xs, ys)
+
+    print('Gradient boosting:')
+    print('F1-Score:', search.best_score_)
+    print('Best params:', search.best_params_)
+    return search.best_estimator_
+
+def save_model(save_fn: str, model):
+    """
+    Save model to save_fn.
+    """
+    try:
+        with open(save_fn, 'wb') as file:
+            pickle.dump(model, file)
+    except Exception as e:
+        print(f"Error while saving model: {e}")
 
 def main():
     data = preprocess_data('../pokemon/updated_data.csv')
     pipe = create_pipe()
     search = create_grid_search(data, pipe)
     model = train_model(data, search)
-    save_model(model)
+    save_model('model.dat', model)
 
 if __name__ == '__main__':
     main()
