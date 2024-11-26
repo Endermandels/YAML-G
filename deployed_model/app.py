@@ -84,8 +84,8 @@ def predict_is_legendary(df, model):
         print("Predicted legendary!")
 
 def main():
-    model = unpickle("model.pickle")
-    xs = unpickle("xs.pickle")
+    model = unpickle("../models/model.pickle")
+    xs = unpickle("../models/xs.pickle")
 
     for _ in range(0, 5):
         print("Testing another pokemon...")
