@@ -31,6 +31,12 @@ class TransformData(BaseEstimator, TransformerMixin):
     def transform(self, xs):
         result = xs.apply(self.func)
         return result
+    
+def get_identity(x):
+    return x
+
+def get_sqrt(x):
+    return np.where(x > 0, np.sqrt(x), 0)
 
 def preprocess_data(path: str) -> pd.DataFrame:
     """
@@ -48,7 +54,7 @@ def preprocess_data(path: str) -> pd.DataFrame:
     data = data.drop(columns=['classfication', 'japanese_name', 'name', 'generation'])
     
     # Make capture_rate a numeric data type column
-    data['capture_rate'] = data['capture_rate'].str.extract('(\d+)').astype(np.int64)
+    data['capture_rate'] = data['capture_rate'].str.extract('(\\d+)').astype(np.int64)
     
     ability_column = 'abilities'
     categorical_columns = \
@@ -100,7 +106,7 @@ def create_pipe() -> Pipeline:
     steps = [
         ('column_select', SelectColumns(['capture_rate']))
         # , ('PCA', PCA(n_components=2))
-        , ('transform_data', TransformData(lambda x: x))
+        , ('transform_data', TransformData(get_identity))
         , ('regression', GradientBoostingClassifier(max_depth=2))
     ]
     return Pipeline(steps)
@@ -124,8 +130,11 @@ def create_grid_search(data: pd.DataFrame, pipe: Pipeline) -> GridSearchCV:
         #     1, 2, 3, 4, 5, 6, 7, 8, 9, 10
         # ],
         'transform_data__func': [
-            lambda x: np.where(x > 0, np.sqrt(x), 0)
-            , lambda x: x
+            #lambda x: np.where(x > 0, np.sqrt(x), 0)
+            get_sqrt
+            #, lambda x: x
+            , get_identity
+            
             , np.square
         ],
         'regression__max_depth': [
