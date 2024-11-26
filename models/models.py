@@ -182,7 +182,8 @@ def main():
     pipe = create_pipe()
     search = create_grid_search(data, pipe)
     model = train_model(data, search)
-    save_model('model.dat', model)
+    save_model('model.pickle', model)
+    save_model('xs.pickle', data.drop(columns=[TARGET]))
 
 if __name__ == '__main__':
     main()
