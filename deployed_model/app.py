@@ -172,6 +172,17 @@ def run_app(model, xs):
         predict.render()
         exit_b.render()
 
+        if(reset.clicked()):
+            for box in boxes:
+                box.reset()
+                box.render()
+
+        if(predict.clicked()):
+            pass
+
+        if(exit_b.clicked()):
+            keep_running = False
+
         renderer.present() # Actually apply the changes to the screen
 
 def main():

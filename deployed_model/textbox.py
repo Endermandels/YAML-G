@@ -48,4 +48,11 @@ class TextBox():
 
     def get_text(self):
         return self.contents[1:]
+    
+    def reset(self):
+        self.is_selected = False
+        self.was_selected = False
+        self.text_picture = Picture(self.bg.renderer, font=self.font2, text=self.default, x=self.bg.dest_rect.x, y=self.bg.dest_rect.y+12)
+        self.contents = " "
+
         
