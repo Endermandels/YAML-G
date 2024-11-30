@@ -72,7 +72,10 @@ def get_test_data(xs, boxes : list[TextBox]):
         n=0
         for box in boxes:
             contents = box.get_text()
-            if not contents: continue
+            if not contents:
+                n += 1
+                continue
+            
             if(n < 6):
                 abilities.append(contents)
             elif(n==6):
@@ -80,16 +83,17 @@ def get_test_data(xs, boxes : list[TextBox]):
             elif(n==7):
                 speed = int(contents)
             elif(n==8):
+                print()
                 base_egg_steps = int(contents)
             elif(n==9):
                 capture_rate = int(contents)
             n += 1
 
 
-        print(abilities, hp, speed, base_egg_steps, capture_rate)
+        #print(abilities, hp, speed, base_egg_steps, capture_rate)
     
 
-        abilities = ['Pressure', 'Pickpocket']
+        #abilities = ['Pressure', 'Pickpocket']
         # base_egg_steps = 250
         # capture_rate = 50
         # speed = 100
@@ -225,7 +229,7 @@ def run_app(model, xs):
             if(reset.clicked()):
                 for box in boxes:
                     box.reset()
-                    box.render()
+                    
 
             if(predict.clicked()):
                 results_screen_on = True
