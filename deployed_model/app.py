@@ -77,13 +77,13 @@ def get_test_data(xs, boxes : list[TextBox]):
                 continue
             
             if(n < 6):
-                abilities.append(contents)
+                abilities.append(contents.title())
             elif(n==6):
                 hp = int(contents)
             elif(n==7):
                 speed = int(contents)
             elif(n==8):
-                print()
+                #print()
                 base_egg_steps = int(contents)
             elif(n==9):
                 capture_rate = int(contents)
@@ -91,6 +91,7 @@ def get_test_data(xs, boxes : list[TextBox]):
 
 
         #print(abilities, hp, speed, base_egg_steps, capture_rate)
+        #print(abilities)
     
 
         #abilities = ['Pressure', 'Pickpocket']
@@ -129,9 +130,9 @@ def get_test_data(xs, boxes : list[TextBox]):
 def predict_is_legendary(df, model) -> bool:
     result = model.predict(df)
     if(result == [0]): 
-        print(result, "predicted not legendary")
+        #print(result, "predicted not legendary")
         return False
-    print(result, "predicted legendary")
+    #print(result, "predicted legendary")
     return True
 
 def run_app(model, xs):
@@ -143,6 +144,9 @@ def run_app(model, xs):
     sdlimage.IMG_Init(sdlimage.IMG_INIT_PNG)
     window = sdl2.ext.window.Window(title="Legendary Pokemon Predictor", size=(640, 480), flags=sdl2.SDL_WINDOW_RESIZABLE)
     renderer = sdl2.ext.renderer.Renderer(window)
+
+    icon = sdl2.ext.load_image("data/pikachu2.png")
+    sdl2.SDL_SetWindowIcon(window.window, icon)
 
     # open fonts
     font_big = ttf.TTF_OpenFont("data/Ubuntu-M.ttf".encode('utf-8'), 32)
