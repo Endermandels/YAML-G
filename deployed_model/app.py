@@ -58,16 +58,19 @@ def unpickle(model_file : str):
 
 # Obtain new data to test the model with.
 # The new data will be modified in the same way that the original data was for training.
-# TODO eventually this data will be taken in from a GUI.
 
 def get_test_data(xs, boxes : list[TextBox]):
 
+    # Set default values to the mean of each column.
+
     abilities = []
-    base_egg_steps = 0
-    capture_rate = 0
-    hp = 0
-    speed = 0
+    base_egg_steps = xs['base_egg_steps'].mean()
+    capture_rate = xs['capture_rate'].mean()
+    hp = xs['hp'].mean()
+    speed = xs['speed'].mean()
     
+    # Obtain the values entered by the user.
+
     try:
         n=0
         for box in boxes:
@@ -75,7 +78,6 @@ def get_test_data(xs, boxes : list[TextBox]):
             if not contents:
                 n += 1
                 continue
-            
             if(n < 6):
                 abilities.append(contents.title())
             elif(n==6):
@@ -89,23 +91,11 @@ def get_test_data(xs, boxes : list[TextBox]):
                 capture_rate = int(contents)
             n += 1
 
-
         #print(abilities, hp, speed, base_egg_steps, capture_rate)
-        #print(abilities)
-    
 
-        #abilities = ['Pressure', 'Pickpocket']
-        # base_egg_steps = 250
-        # capture_rate = 50
-        # speed = 100
-        # hp = 50
+        # create a dataframe and get it in the expected format
 
         test_data = {
-            # 'abilities' : [['Pressure', 'Pickpocket']],
-            # 'base_egg_steps' : [250],
-            # 'capture_rate' : [50],
-            # 'hp' : [50],
-            # 'speed' : [100],
             'abilities' : [abilities],
             'base_egg_steps' : [base_egg_steps],
             'capture_rate' : [capture_rate],
@@ -113,7 +103,6 @@ def get_test_data(xs, boxes : list[TextBox]):
             'speed' : [speed],
         }
 
-        # create a dataframe and get it in the expected format
         test_df = pd.DataFrame(test_data)
         mlb = MultiLabelBinarizer()
         abilities_data = pd.DataFrame(  mlb.fit_transform(test_df['abilities']), columns=mlb.classes_, index=test_df.index)
@@ -129,11 +118,7 @@ def get_test_data(xs, boxes : list[TextBox]):
 
 def predict_is_legendary(df, model) -> bool:
     result = model.predict(df)
-    if(result == [0]): 
-        #print(result, "predicted not legendary")
-        return False
-    #print(result, "predicted legendary")
-    return True
+    return (result == [1])
 
 def run_app(model, xs):
 
@@ -177,7 +162,6 @@ def run_app(model, xs):
     box9 = TextBox(renderer, font, "data/box.png", 350, 180, "Base egg steps", font2=font_i)
     box10 = TextBox(renderer, font, "data/box.png", 350, 240, "Capture rate", font2=font_i)
     
-
     # other variables with an extended scope
 
     keep_running = True
@@ -233,7 +217,6 @@ def run_app(model, xs):
             if(reset.clicked()):
                 for box in boxes:
                     box.reset()
-                    
 
             if(predict.clicked()):
                 results_screen_on = True
@@ -243,7 +226,6 @@ def run_app(model, xs):
             if(exit_b.clicked()):
                 keep_running = False
         else:
-
             exit_b.update_button(left_pressed, mouse_rect)
             try_another.update_button(left_pressed, mouse_rect)
             exit_b.render()
@@ -259,9 +241,6 @@ def run_app(model, xs):
             if(exit_b.clicked()):
                 keep_running = False
 
-            
-
-
         renderer.present() # Actually apply the changes to the screen
 
 def main():
@@ -269,14 +248,6 @@ def main():
     model = unpickle("../models/model.pickle")
     xs = unpickle("../models/xs.pickle")
     run_app(model, xs)
-
-    # for _ in range(0, 5):
-    #     print("Testing another pokemon...")
-    #     test_df = get_test_data(xs)
-    #     predict_is_legendary(test_df, model)
-    #     time.sleep(2)
-
-
-        
+     
 if __name__ == '__main__':
     main()
