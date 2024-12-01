@@ -124,7 +124,7 @@ def create_grid_search(data: pd.DataFrame, pipe: Pipeline) -> GridSearchCV:
     """
     grid = {
         'column_select__columns': [
-            list(data.drop(columns=TARGET).columns)
+            ['base_egg_steps', 'base_total', 'capture_rate']
         ],
         # 'PCA__n_components': [
         #     1, 2, 3, 4, 5, 6, 7, 8, 9, 10
@@ -182,6 +182,16 @@ def main():
     pipe = create_pipe()
     search = create_grid_search(data, pipe)
     model = train_model(data, search)
+
+    x_test = pd.read_csv('../pokemon/X_test.csv')
+    x_test_predict = x_test[['base_egg_steps', 'base_total', 'capture_rate']]
+    predictions = model.predict(x_test_predict)
+    df_predictions = pd.DataFrame({
+        'ID' : x_test['name'],
+        'is_legendary' : predictions
+    })
+    df_predictions.to_csv('../pokemon/submission.csv', index=False)
+
     save_model('model.pickle', model)
     save_model('xs.pickle', data.drop(columns=[TARGET]))
 
