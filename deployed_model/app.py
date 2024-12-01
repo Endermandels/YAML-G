@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import random
 import time
-from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.base import TransformerMixin, BaseEstimator
 import sdl2
 import sdl2.ext
@@ -63,11 +62,19 @@ def get_test_data(xs, boxes : list[TextBox]):
 
     # Set default values to the mean of each column.
 
-    abilities = []
+    hp = 69
+    attack = 78
+    defense = 73
+    sp_attack = 72
+    sp_defense = 70
+    speed = 65
     base_egg_steps = xs['base_egg_steps'].mean()
     capture_rate = xs['capture_rate'].mean()
-    hp = xs['hp'].mean()
-    speed = xs['speed'].mean()
+
+    # height = xs['height_m'].mean()
+    # weight = xs['weight_kg'].mean()
+    # xp = xs['experience_growth'].mean()
+    # base_happiness = xs['base_happiness'].mean()
     
     # Obtain the values entered by the user.
 
@@ -75,39 +82,53 @@ def get_test_data(xs, boxes : list[TextBox]):
         n=0
         for box in boxes:
             contents = box.get_text()
-            if not contents:
+            if not contents and contents != 0:
                 n += 1
                 continue
-            if(n < 6):
-                abilities.append(contents.title())
-            elif(n==6):
+            if(n==0):
                 hp = int(contents)
-            elif(n==7):
+            elif(n==1):
+                attack = int(contents)
+            elif(n==2):
+                defense = int(contents)
+            elif(n==3):
+                sp_attack = int(contents)
+            elif(n==4):
+                sp_defense = int(contents)
+            elif(n==5):
                 speed = int(contents)
-            elif(n==8):
+            elif(n==6):
                 base_egg_steps = int(contents)
-            elif(n==9):
+            elif(n==7):
                 capture_rate = int(contents)
+            # elif(n==8):
+            #     xp = int(contents)
+            # elif(n==9):
+            #     weight = float(contents)
+            # elif(n==10):
+            #     height = float(contents)
+            # elif(n==11):
+            #     base_happiness = int(contents)
             n += 1
 
-        #print(abilities, hp, speed, base_egg_steps, capture_rate)
-
+        
+        
         # create a dataframe and get it in the expected format
 
+        base_total = hp + attack + defense + sp_attack + sp_defense + speed
+        #print(base_total, base_egg_steps, capture_rate)
+
         test_data = {
-            'abilities' : [abilities],
             'base_egg_steps' : [base_egg_steps],
             'capture_rate' : [capture_rate],
-            'hp' : [hp],
-            'speed' : [speed],
+            'base_total' : [base_total],
+            # 'base_happiness' : [base_happiness],
+            # 'height_m': [height],
+            # 'weight_kg' : [weight],
+            # 'experience_growth' : [xp],
         }
 
         test_df = pd.DataFrame(test_data)
-        mlb = MultiLabelBinarizer()
-        abilities_data = pd.DataFrame(  mlb.fit_transform(test_df['abilities']), columns=mlb.classes_, index=test_df.index)
-        test_df = test_df.drop(columns=['abilities'], axis=1)
-        test_df = pd.concat([test_df, abilities_data], axis=1)
-        test_df = test_df.reindex(columns=xs.columns, fill_value=0)
         return test_df
     except Exception as e:
         print(f"Input error: {e}")
@@ -156,22 +177,27 @@ def run_app(model, xs):
     exit_b = Button(renderer, "data/exit.png", 450, 420)
     try_another = Button(renderer, "data/try_another.png", 100, 420)
     
-    box1 = TextBox(renderer, font, "data/box.png", 50, 60, "Ability 1", font2=font_i)
-    box2 = TextBox(renderer, font, "data/box.png", 50, 120, "Ability 2 (optional)", font2=font_i)
-    box3 = TextBox(renderer, font, "data/box.png", 50, 180, "Ability 3 (optional)", font2=font_i)
-    box4 = TextBox(renderer, font, "data/box.png", 50, 240, "Ability 4 (optional)", font2=font_i)
-    box5 = TextBox(renderer, font, "data/box.png", 50, 300, "Ability 5 (optional)", font2=font_i)
-    box6 = TextBox(renderer, font, "data/box.png", 50, 360, "Ability 6 (optional)", font2=font_i)
-    box7 = TextBox(renderer, font, "data/box.png", 350, 60, "Hitpoints", font2=font_i)
-    box8 = TextBox(renderer, font, "data/box.png", 350, 120, "Speed", font2=font_i)
-    box9 = TextBox(renderer, font, "data/box.png", 350, 180, "Base egg steps", font2=font_i)
-    box10 = TextBox(renderer, font, "data/box.png", 350, 240, "Capture rate", font2=font_i)
+    box1 = TextBox(renderer, font, "data/box.png", 50, 120, "Hitpoints", font2=font_i)
+    box2 = TextBox(renderer, font, "data/box.png", 50, 180, "Attack", font2=font_i)
+    box3 = TextBox(renderer, font, "data/box.png", 50, 240, "Defense", font2=font_i)
+    box4 = TextBox(renderer, font, "data/box.png", 50, 300, "Special attack", font2=font_i)
+    box5 = TextBox(renderer, font, "data/box.png", 350, 120, "Special defense", font2=font_i)
+    box6 = TextBox(renderer, font, "data/box.png", 350, 180, "Speed", font2=font_i)
+    box7 = TextBox(renderer, font, "data/box.png", 350, 240, "Base egg steps", font2=font_i)
+    box8 = TextBox(renderer, font, "data/box.png", 350, 300, "Capture rate", font2=font_i)
+    # box9 = TextBox(renderer, font, "data/box.png", 350, 180, "Experience growth", font2=font_i)
+    # box10 = TextBox(renderer, font, "data/box.png", 350, 240, "Weight (kg)", font2=font_i)
+    # box11 = TextBox(renderer, font, "data/box.png", 350, 300, "Height (m)", font2=font_i)
+    # box12 = TextBox(renderer, font, "data/box.png", 350, 360, "Base Happiness", font2=font_i)
+    
+    
     
     # other variables with an extended scope
 
     keep_running = True
     left_pressed = False
-    boxes = [box1, box2, box3, box4, box5, box6, box7, box8, box9, box10]
+    #boxes = [box1, box2, box3, box4, box5, box6, box7, box8, box9, box10, box11, box12]
+    boxes = [box1, box2, box3, box4, box5, box6, box7, box8]
     mouse_rect = sdl2.SDL_Rect(0, 0, 1, 1)
     mouse_rect_logical = sdl2.SDL_Rect(0, 0, 1, 1)
     results_screen_on = False
@@ -209,10 +235,8 @@ def run_app(model, xs):
                     backspace_pressed = True
 
         window_w, window_h = window.size
-        print(window_w, window_h)
         x_scale = (window_w / 640)
         y_scale = (window_h / 480)
-        print(window_w, window_h, x_scale, y_scale)
 
         # Using the logic and rendering methods for our GUI components
 
