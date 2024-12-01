@@ -148,6 +148,7 @@ def run_app(model, xs):
     sdl2.ext.init()
     ttf.TTF_Init()
     sdlimage.IMG_Init(sdlimage.IMG_INIT_PNG)
+    sdl2.SDL_SetHint(sdl2.SDL_HINT_RENDER_SCALE_QUALITY, b"1")
     window = sdl2.ext.window.Window(title="Legendary Pokemon Predictor", size=(640, 480), flags=sdl2.SDL_WINDOW_RESIZABLE)
     renderer = sdl2.SDL_CreateRenderer(window.window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
