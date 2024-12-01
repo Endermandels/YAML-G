@@ -85,7 +85,6 @@ def get_test_data(xs, boxes : list[TextBox]):
             elif(n==7):
                 speed = int(contents)
             elif(n==8):
-                #print()
                 base_egg_steps = int(contents)
             elif(n==9):
                 capture_rate = int(contents)
@@ -112,7 +111,8 @@ def get_test_data(xs, boxes : list[TextBox]):
         return test_df
     except Exception as e:
         print(f"Input error: {e}")
-        return None
+        error_df = pd.DataFrame()
+        return error_df
 
 # Given a pandas dataframe in the a format used for training, predict if the pokemon is legendary
 
@@ -128,7 +128,7 @@ def run_app(model, xs):
     ttf.TTF_Init()
     sdlimage.IMG_Init(sdlimage.IMG_INIT_PNG)
     window = sdl2.ext.window.Window(title="Legendary Pokemon Predictor", size=(640, 480), flags=sdl2.SDL_WINDOW_RESIZABLE)
-    renderer = sdl2.ext.renderer.Renderer(window)
+    renderer = sdl2.SDL_CreateRenderer(window.window, -1, sdl2.SDL_RENDERER_ACCELERATED)
 
     icon = sdl2.ext.load_image("data/pikachu2.png")
     sdl2.SDL_SetWindowIcon(window.window, icon)
@@ -144,6 +144,11 @@ def run_app(model, xs):
     bg = Picture(renderer, "data/bg.png", 0, 0)
     legendary = Picture(renderer, font=font_big, text="Your pokemon is LEGENDARY!", x=85, y=225)
     not_legendary = Picture(renderer, font=font_big, text="Your pokemon is NOT LEGENDARY!", x=60, y=225)
+    
+    legendary_error = Picture(renderer, font=font_big, text="Your pokemon is an ERROR!", x=85, y=225)
+    legendary_error_2 = Picture(renderer, font=font_big, text="Check your input!", x=85, y=260)
+    legendary_error_3 = Picture(renderer, "data/pikachu2.png", 500, 225)
+
 
     reset = Button(renderer, "data/reset.png", 100, 420)
     retry = Button(renderer, "data/retry.png", 250, 420)
@@ -168,8 +173,13 @@ def run_app(model, xs):
     left_pressed = False
     boxes = [box1, box2, box3, box4, box5, box6, box7, box8, box9, box10]
     mouse_rect = sdl2.SDL_Rect(0, 0, 1, 1)
+    mouse_rect_logical = sdl2.SDL_Rect(0, 0, 1, 1)
     results_screen_on = False
+    results_error = False
     is_legendary = False
+
+    x_scale = 1
+    y_scale = 1
 
     while(keep_running): # main loop
         
@@ -190,29 +200,37 @@ def run_app(model, xs):
                     left_pressed = False
             elif(event.type == sdl2.SDL_MOUSEMOTION):
                 mouse_rect.x, mouse_rect.y = event.motion.x, event.motion.y
+                mouse_rect_logical.x = int(mouse_rect.x / x_scale)
+                mouse_rect_logical.y = int(mouse_rect.y / y_scale)
             elif(event.type == sdl2.SDL_TEXTINPUT):
                 input_text = event.text.text.decode("utf-8")
             elif(event.type == sdl2.SDL_KEYDOWN):
                 if(event.key.keysym.sym == sdl2.SDLK_BACKSPACE):
                     backspace_pressed = True
 
+        window_w, window_h = window.size
+        print(window_w, window_h)
+        x_scale = (window_w / 640)
+        y_scale = (window_h / 480)
+        print(window_w, window_h, x_scale, y_scale)
+
         # Using the logic and rendering methods for our GUI components
 
-        bg.render()
-        title.render()
+        bg.render(x_scale, y_scale)
+        title.render(x_scale, y_scale)
 
         if not results_screen_on:
 
             for box in boxes:
-                box.update(left_pressed, mouse_rect, input_text, backspace_pressed)
-                box.render()
+                box.update(left_pressed, mouse_rect_logical, input_text, backspace_pressed)
+                box.render(x_scale, y_scale)
 
-            reset.update_button(left_pressed, mouse_rect)
-            predict.update_button(left_pressed, mouse_rect)
-            exit_b.update_button(left_pressed, mouse_rect)
-            reset.render()
-            predict.render()
-            exit_b.render()
+            reset.update_button(left_pressed, mouse_rect_logical)
+            predict.update_button(left_pressed, mouse_rect_logical)
+            exit_b.update_button(left_pressed, mouse_rect_logical)
+            reset.render(x_scale, y_scale)
+            predict.render(x_scale, y_scale)
+            exit_b.render(x_scale, y_scale)
 
             if(reset.clicked()):
                 for box in boxes:
@@ -221,27 +239,37 @@ def run_app(model, xs):
             if(predict.clicked()):
                 results_screen_on = True
                 test_df = get_test_data(xs, boxes)
-                is_legendary = predict_is_legendary(test_df, model)
+                if not test_df.empty:
+                    is_legendary = predict_is_legendary(test_df, model)
+                else:
+                    results_error = True
 
             if(exit_b.clicked()):
                 keep_running = False
         else:
-            exit_b.update_button(left_pressed, mouse_rect)
-            try_another.update_button(left_pressed, mouse_rect)
-            exit_b.render()
-            try_another.render()
-            if is_legendary:
-                legendary.render()
+            
+            exit_b.update_button(left_pressed, mouse_rect_logical)
+            try_another.update_button(left_pressed, mouse_rect_logical)
+            exit_b.render(x_scale, y_scale)
+            try_another.render(x_scale, y_scale)
+            if is_legendary and not results_error:
+                legendary.render(x_scale, y_scale)
+            elif not is_legendary and not results_error:
+                not_legendary.render(x_scale, y_scale)
             else:
-                not_legendary.render()
+                legendary_error.render(x_scale, y_scale)
+                legendary_error_2.render(x_scale, y_scale)
+                legendary_error_3.render(x_scale, y_scale)
+
             if(try_another.clicked()):
                 for box in boxes:
                     box.reset()
                 results_screen_on = False
+                results_error = False
             if(exit_b.clicked()):
                 keep_running = False
-
-        renderer.present() # Actually apply the changes to the screen
+            
+        sdl2.SDL_RenderPresent(renderer) # Actually apply the changes to the screen
 
 def main():
 
