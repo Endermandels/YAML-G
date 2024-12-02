@@ -10,14 +10,16 @@ class Picture():
             self.renderer = renderer
             path_encoded = path.encode('utf-8')
             img_surface = sdl2.sdlimage.IMG_Load(path_encoded)
-            self.texture = sdl2.ext.renderer.Texture(renderer, img_surface)
+            #self.texture = sdl2.ext.renderer.Texture(renderer, img_surface)
+            self.texture = sdl2.SDL_CreateTextureFromSurface(renderer, img_surface)
             self.src_rect = sdl2.SDL_Rect(0,0,img_surface.contents.w, img_surface.contents.h)
             self.dest_rect = sdl2.SDL_Rect(x, y, img_surface.contents.w, img_surface.contents.h)
         elif font and text:
             self.renderer = renderer
             try:
                 surface = ttf.TTF_RenderText_Blended(font, text.encode('utf-8'), sdl2.SDL_Color(0,0,0))
-                self.texture = sdl2.ext.renderer.Texture(renderer, surface)
+                #self.texture = sdl2.ext.renderer.Texture(renderer, surface)
+                self.texture = sdl2.SDL_CreateTextureFromSurface(renderer, surface)
                 self.src_rect = sdl2.SDL_Rect(0,0,surface.contents.w, surface.contents.h)
                 self.dest_rect = sdl2.SDL_Rect(x, y, surface.contents.w, surface.contents.h)
             except Exception as e:
@@ -30,4 +32,5 @@ class Picture():
                              int(self.dest_rect.y*y_scale_factor),
                              int(self.dest_rect.w*x_scale_factor),
                              int(self.dest_rect.h*y_scale_factor) )
-        self.renderer.blit(self.texture, self.src_rect, rect)
+        #self.renderer.blit(self.texture, self.src_rect, rect)
+        sdl2.SDL_RenderCopy(self.renderer, self.texture, self.src_rect, rect)
